@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, HeartPulse, Users } from "lucide-react";
+import { ClipboardCheck, HeartPulse, Users, Stethoscope } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface CategorySelectorProps {
   onSelect: (category: string) => void;
@@ -28,8 +29,10 @@ const categories = [
 ];
 
 export function CategorySelector({ onSelect }: CategorySelectorProps) {
+  const navigate = useNavigate();
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-foreground">What would you like to share feedback about?</h2>
         <p className="text-muted-foreground mt-2">Select a category to start the conversation</p>
@@ -59,6 +62,32 @@ export function CategorySelector({ onSelect }: CategorySelectorProps) {
             </Card>
           );
         })}
+      </div>
+
+      {/* Nursing Assessment Card */}
+      <div className="border-t border-border pt-8">
+        <div className="text-center mb-4">
+          <h3 className="text-lg font-medium text-foreground">For Nursing Staff</h3>
+        </div>
+        <Card
+          className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group max-w-md mx-auto"
+          onClick={() => navigate("/nursing")}
+        >
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <Stethoscope className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-lg">Nursing Check-In</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="text-center">
+              Assess patient condition, mood, and immediate needs
+            </CardDescription>
+            <Button className="w-full mt-4" variant="outline">
+              Start Assessment
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

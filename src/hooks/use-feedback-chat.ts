@@ -9,10 +9,18 @@ interface FeedbackResult {
   summary: string;
 }
 
+interface NursingResult {
+  condition_summary: string;
+  mood_assessment: string;
+  immediate_needs: string[];
+  priority_level: string;
+}
+
 export function useFeedbackChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackResult, setFeedbackResult] = useState<FeedbackResult | null>(null);
+  const [nursingResult, setNursingResult] = useState<NursingResult | null>(null);
   const { toast } = useToast();
 
   const parseFeedbackResult = (content: string): FeedbackResult | null => {
@@ -27,10 +35,23 @@ export function useFeedbackChat() {
     return null;
   };
 
+  const parseNursingResult = (content: string): NursingResult | null => {
+    const match = content.match(/\[NURSING_ASSESSMENT\]([\s\S]*?)\[\/NURSING_ASSESSMENT\]/);
+    if (match) {
+      try {
+        return JSON.parse(match[1].trim());
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
   const cleanContent = (content: string): string => {
     return content
       .replace(/\[COMPLETE\]/g, "")
       .replace(/\[FEEDBACK_SUMMARY\][\s\S]*?\[\/FEEDBACK_SUMMARY\]/g, "")
+      .replace(/\[NURSING_ASSESSMENT\][\s\S]*?\[\/NURSING_ASSESSMENT\]/g, "")
       .trim();
   };
 
@@ -117,9 +138,13 @@ export function useFeedbackChat() {
         }
 
         // Check for completion
-        const result = parseFeedbackResult(assistantContent);
-        if (result) {
-          setFeedbackResult(result);
+        const feedbackRes = parseFeedbackResult(assistantContent);
+        if (feedbackRes) {
+          setFeedbackResult(feedbackRes);
+        }
+        const nursingRes = parseNursingResult(assistantContent);
+        if (nursingRes) {
+          setNursingResult(nursingRes);
         }
       } catch (error) {
         console.error("Chat error:", error);
@@ -222,12 +247,14 @@ export function useFeedbackChat() {
   const resetChat = useCallback(() => {
     setMessages([]);
     setFeedbackResult(null);
+    setNursingResult(null);
   }, []);
 
   return {
     messages,
     isLoading,
     feedbackResult,
+    nursingResult,
     sendMessage,
     startConversation,
     resetChat,

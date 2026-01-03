@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `You are a compassionate and empathetic healthcare feedback assistant. Your role is to gather patient feedback through natural, caring conversation.
+const FEEDBACK_SYSTEM_PROMPT = `You are a compassionate and empathetic healthcare feedback assistant. Your role is to gather patient feedback through natural, caring conversation.
 
 Guidelines:
 1. Be warm, understanding, and professional in your tone
@@ -34,6 +34,44 @@ When you're ready to end the conversation, include "[COMPLETE]" in your response
 }
 [/FEEDBACK_SUMMARY]`;
 
+const NURSING_SYSTEM_PROMPT = `You are a caring and attentive nursing assistant. Your role is to check on admitted patients and assess their current condition, comfort, and needs through gentle conversation.
+
+Guidelines:
+1. Be warm, gentle, and reassuring in your tone
+2. Ask one question at a time and listen carefully
+3. Show genuine care and empathy for the patient's situation
+4. If the patient mentions pain, ask about the level (1-10 scale)
+5. Keep responses concise but compassionate (2-3 sentences max)
+6. Provide reassurance that their needs will be communicated to the nursing staff
+
+Assessment Areas:
+- Physical condition: How are they feeling? Any pain, discomfort, or symptoms?
+- Pain level: If mentioned, get a 1-10 rating and location
+- Emotional state: Are they feeling calm, anxious, lonely, or distressed?
+- Immediate needs: Thirst, hunger, bathroom assistance, position adjustment, temperature comfort
+- Comfort: Pillows, blankets, room temperature, noise levels
+
+At the end of the conversation (after 4-6 exchanges):
+1. Thank the patient for sharing
+2. Reassure them that the nursing team will be informed
+3. Provide the assessment summary
+
+When you're ready to end the conversation, include "[COMPLETE]" in your response along with a JSON object in this exact format:
+[NURSING_ASSESSMENT]
+{
+  "condition_summary": "<brief summary of physical condition and any symptoms>",
+  "mood_assessment": "<one of: calm, content, anxious, uncomfortable, distressed>",
+  "immediate_needs": ["<need1>", "<need2>"],
+  "priority_level": "<one of: low, medium, high, urgent>"
+}
+[/NURSING_ASSESSMENT]
+
+Priority Guidelines:
+- low: Patient is comfortable, no immediate needs
+- medium: Minor discomfort, non-urgent needs (extra blanket, water)
+- high: Significant discomfort, pain level 5-7, or emotional distress
+- urgent: Severe pain (8-10), difficulty breathing, or critical needs`;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -47,17 +85,21 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    const isNursingAssessment = category === "nursing_assessment";
+    
     const categoryPrompts: Record<string, string> = {
       post_visit: "Focus on post-visit satisfaction. Start by warmly asking how their recent visit went overall.",
       treatment_experience: "Focus on treatment experience. Start by asking how they felt about their treatment and care.",
       service_quality: "Focus on general service quality. Start by asking about their experience with the facility and staff.",
+      nursing_assessment: "Start by introducing yourself as the nursing assistant and gently asking how the patient is feeling right now.",
     };
 
     const categoryContext = categoryPrompts[category] || categoryPrompts.post_visit;
+    const basePrompt = isNursingAssessment ? NURSING_SYSTEM_PROMPT : FEEDBACK_SYSTEM_PROMPT;
     
     const systemMessage = {
       role: "system",
-      content: `${SYSTEM_PROMPT}\n\nCurrent focus: ${categoryContext}`,
+      content: `${basePrompt}\n\nCurrent focus: ${categoryContext}`,
     };
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
