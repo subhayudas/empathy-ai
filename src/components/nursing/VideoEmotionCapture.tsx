@@ -52,17 +52,27 @@ export function VideoEmotionCapture({
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [currentEmotion, setCurrentEmotion] = useState<EmotionData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const startCamera = useCallback(async () => {
     try {
+      console.log("Starting camera...");
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: 640, height: 480 },
       });
+      console.log("Got media stream:", stream);
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          console.log("Video metadata loaded");
+          videoRef.current?.play().then(() => {
+            console.log("Video playing");
+            setIsVideoReady(true);
+          }).catch(err => console.error("Video play error:", err));
+        };
       }
       setHasPermission(true);
       setIsVideoEnabled(true);
@@ -87,36 +97,54 @@ export function VideoEmotionCapture({
       intervalRef.current = null;
     }
     setIsVideoEnabled(false);
+    setIsVideoReady(false);
   }, []);
 
   const captureFrame = useCallback((): string | null => {
-    if (!videoRef.current || !canvasRef.current) return null;
+    if (!videoRef.current || !canvasRef.current) {
+      console.log("Video or canvas ref not available");
+      return null;
+    }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    if (!ctx || video.videoWidth === 0) return null;
+    if (!ctx || video.videoWidth === 0) {
+      console.log("Context not available or video not ready:", { ctx: !!ctx, videoWidth: video.videoWidth });
+      return null;
+    }
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    return canvas.toDataURL("image/jpeg", 0.7);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+    console.log("Frame captured, size:", dataUrl.length);
+    return dataUrl;
   }, []);
 
   const analyzeEmotion = useCallback(async () => {
-    if (!isVideoEnabled || isAnalyzing) return;
+    if (!isVideoEnabled || !isVideoReady || isAnalyzing) {
+      console.log("Skipping analysis:", { isVideoEnabled, isVideoReady, isAnalyzing });
+      return;
+    }
 
     const frame = captureFrame();
-    if (!frame) return;
+    if (!frame) {
+      console.log("No frame captured");
+      return;
+    }
 
     setIsAnalyzing(true);
+    console.log("Sending frame for emotion analysis...");
 
     try {
       const { data, error } = await supabase.functions.invoke("analyze-emotion", {
         body: { image: frame },
       });
+
+      console.log("Emotion analysis response:", { data, error });
 
       if (error) {
         console.error("Emotion analysis error:", error);
@@ -132,24 +160,28 @@ export function VideoEmotionCapture({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [isVideoEnabled, isAnalyzing, captureFrame, onEmotionDetected]);
+  }, [isVideoEnabled, isVideoReady, isAnalyzing, captureFrame, onEmotionDetected]);
 
-  // Start/stop camera based on isActive prop
+  // Auto-start camera when isActive becomes true (voice starts)
+  // But don't auto-stop - let user control that
   useEffect(() => {
-    if (isActive && !isVideoEnabled) {
+    if (isActive && !isVideoEnabled && hasPermission !== false) {
+      console.log("Auto-starting camera because voice is active");
       startCamera();
-    } else if (!isActive && isVideoEnabled) {
-      stopCamera();
     }
+  }, [isActive, isVideoEnabled, hasPermission, startCamera]);
 
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       stopCamera();
     };
-  }, [isActive, isVideoEnabled, startCamera, stopCamera]);
+  }, [stopCamera]);
 
-  // Set up analysis interval
+  // Set up analysis interval - only analyze when video is ready
   useEffect(() => {
-    if (isVideoEnabled) {
+    if (isVideoEnabled && isVideoReady) {
+      console.log("Starting emotion analysis interval");
       // Initial analysis after 2 seconds
       const initialTimeout = setTimeout(analyzeEmotion, 2000);
       
@@ -162,7 +194,7 @@ export function VideoEmotionCapture({
         }
       };
     }
-  }, [isVideoEnabled, analyzeEmotion, analysisInterval]);
+  }, [isVideoEnabled, isVideoReady, analyzeEmotion, analysisInterval]);
 
   const toggleCamera = () => {
     if (isVideoEnabled) {
