@@ -12,13 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    const VAPI_API_KEY = Deno.env.get('VAPI_API_KEY');
-    if (!VAPI_API_KEY) {
-      console.error("VAPI_API_KEY is not configured");
-      throw new Error('VAPI_API_KEY is not configured in secrets');
+    const VAPI_PHONE_NUMBER_ID = Deno.env.get('VAPI_PHONE_NUMBER_ID');
+    if (!VAPI_PHONE_NUMBER_ID) {
+      console.error("VAPI_PHONE_NUMBER_ID is not configured");
+      throw new Error('VAPI_PHONE_NUMBER_ID is not configured in secrets');
     }
 
-    console.log("VAPI_API_KEY exists:", !!VAPI_API_KEY, "Length:", VAPI_API_KEY.length);
+    console.log("VAPI_PHONE_NUMBER_ID exists:", !!VAPI_PHONE_NUMBER_ID);
 
     const { phoneNumber, assistantId } = await req.json();
 
@@ -32,17 +32,13 @@ serve(async (req) => {
 
     console.log(`Initiating outbound call to: ${phoneNumber} with assistant: ${assistantId}`);
 
-    // Vapi phone number ID provided by user
-    const vapiPhoneNumberId = "29364790-2d8f-4d24-acc8-7ca735a4f123";
-
     const response = await fetch("https://api.vapi.ai/call/phone", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${VAPI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        phoneNumberId: vapiPhoneNumberId,
+        phoneNumberId: VAPI_PHONE_NUMBER_ID,
         customer: {
           number: phoneNumber,
         },
