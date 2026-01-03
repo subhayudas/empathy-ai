@@ -56,29 +56,38 @@ export function VideoEmotionCapture({
   const [currentEmotion, setCurrentEmotion] = useState<EmotionData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Ref callback to attach stream when video element mounts
+  const setVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node && streamRef.current) {
+      console.log("Video element mounted, attaching stream");
+      node.srcObject = streamRef.current;
+      node.onloadedmetadata = () => {
+        console.log("Video metadata loaded");
+        node.play().then(() => {
+          console.log("Video playing");
+          setIsVideoReady(true);
+        }).catch(err => console.error("Video play error:", err));
+      };
+    }
+    // Also set the regular ref for frame capture
+    (videoRef as any).current = node;
+  }, []);
+
   const startCamera = useCallback(async () => {
     try {
       console.log("Starting camera...");
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: 640, height: 480 },
       });
       console.log("Got media stream:", stream);
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          console.log("Video metadata loaded");
-          videoRef.current?.play().then(() => {
-            console.log("Video playing");
-            setIsVideoReady(true);
-          }).catch(err => console.error("Video play error:", err));
-        };
-      }
       setHasPermission(true);
-      setIsVideoEnabled(true);
+      setIsVideoEnabled(true); // This triggers re-render with video element
     } catch (error) {
       console.error("Camera access denied:", error);
       setHasPermission(false);
+      setIsVideoEnabled(false);
       toast({
         variant: "destructive",
         title: "Camera Access Denied",
@@ -205,17 +214,39 @@ export function VideoEmotionCapture({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 p-4 bg-card border border-border rounded-lg">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium">Emotion Analysis</h3>
+        <Button
+          variant={isVideoEnabled ? "destructive" : "outline"}
+          size="sm"
+          onClick={toggleCamera}
+          className="gap-2"
+        >
+          {isVideoEnabled ? (
+            <>
+              <CameraOff className="h-4 w-4" />
+              Stop
+            </>
+          ) : (
+            <>
+              <Camera className="h-4 w-4" />
+              Enable Camera
+            </>
+          )}
+        </Button>
+      </div>
+
       {/* Video Preview */}
-      <div className="relative rounded-lg overflow-hidden bg-muted aspect-video max-w-xs mx-auto">
-        {isVideoEnabled ? (
+      <div className="relative rounded-lg overflow-hidden bg-black aspect-video w-full">
+        {isVideoEnabled || streamRef.current ? (
           <>
             <video
-              ref={videoRef}
+              ref={setVideoRef}
               autoPlay
               playsInline
               muted
-              className="w-full h-full object-cover mirror"
+              className="w-full h-full object-cover"
               style={{ transform: "scaleX(-1)" }}
             />
             {/* Emotion Badge */}
@@ -239,18 +270,29 @@ export function VideoEmotionCapture({
                 Analyzing...
               </div>
             )}
+            {/* Video ready indicator */}
+            {isVideoEnabled && !isVideoReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <div className="text-white text-sm">Loading camera...</div>
+              </div>
+            )}
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4">
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4 min-h-[180px]">
             {hasPermission === false ? (
               <>
                 <AlertCircle className="h-8 w-8 mb-2 text-destructive" />
-                <p className="text-sm text-center">Camera access denied</p>
+                <p className="text-sm text-center text-white">Camera access denied</p>
+                <p className="text-xs text-center text-muted-foreground mt-1">
+                  Please allow camera access in your browser
+                </p>
               </>
             ) : (
               <>
-                <CameraOff className="h-8 w-8 mb-2" />
-                <p className="text-sm text-center">Camera off</p>
+                <Camera className="h-8 w-8 mb-2 text-muted-foreground" />
+                <p className="text-sm text-center text-muted-foreground">
+                  Click "Enable Camera" to start
+                </p>
               </>
             )}
           </div>
@@ -260,31 +302,9 @@ export function VideoEmotionCapture({
       {/* Hidden canvas for frame capture */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Controls */}
-      <div className="flex justify-center">
-        <Button
-          variant={isVideoEnabled ? "destructive" : "outline"}
-          size="sm"
-          onClick={toggleCamera}
-          className="gap-2"
-        >
-          {isVideoEnabled ? (
-            <>
-              <CameraOff className="h-4 w-4" />
-              Disable Camera
-            </>
-          ) : (
-            <>
-              <Camera className="h-4 w-4" />
-              Enable Camera
-            </>
-          )}
-        </Button>
-      </div>
-
       {/* Privacy notice */}
       <p className="text-xs text-muted-foreground text-center">
-        Video is analyzed locally. Only emotion data is saved.
+        Video is processed for emotion detection. Only emotion data is saved.
       </p>
     </div>
   );
