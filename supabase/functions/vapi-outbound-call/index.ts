@@ -14,8 +14,11 @@ serve(async (req) => {
   try {
     const VAPI_API_KEY = Deno.env.get('VAPI_API_KEY');
     if (!VAPI_API_KEY) {
-      throw new Error('VAPI_API_KEY is not set');
+      console.error("VAPI_API_KEY is not configured");
+      throw new Error('VAPI_API_KEY is not configured in secrets');
     }
+
+    console.log("VAPI_API_KEY exists:", !!VAPI_API_KEY, "Length:", VAPI_API_KEY.length);
 
     const { phoneNumber, assistantId } = await req.json();
 
@@ -23,7 +26,11 @@ serve(async (req) => {
       throw new Error('Phone number is required');
     }
 
-    console.log(`Initiating outbound call to: ${phoneNumber}`);
+    if (!assistantId) {
+      throw new Error('Assistant ID is required');
+    }
+
+    console.log(`Initiating outbound call to: ${phoneNumber} with assistant: ${assistantId}`);
 
     // Vapi phone number ID provided by user
     const vapiPhoneNumberId = "29364790-2d8f-4d24-acc8-7ca735a4f123";
@@ -43,11 +50,29 @@ serve(async (req) => {
       }),
     });
 
-    const data = await response.json();
-    
+    // Get response as text first to handle non-JSON responses
+    const responseText = await response.text();
+    console.log("Vapi API response status:", response.status);
+    console.log("Vapi API response:", responseText);
+
     if (!response.ok) {
-      console.error("Vapi API error:", data);
-      throw new Error(data.message || "Failed to initiate call");
+      // Try to parse as JSON, otherwise use raw text
+      let errorMessage: string;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || responseText;
+      } catch {
+        errorMessage = responseText || `HTTP ${response.status}`;
+      }
+      throw new Error(`Vapi API error: ${errorMessage}`);
+    }
+
+    // Parse successful response
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error("Invalid response from Vapi API");
     }
 
     console.log("Call initiated successfully:", data);
