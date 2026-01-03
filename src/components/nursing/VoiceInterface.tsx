@@ -1,8 +1,14 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import Vapi from "@vapi-ai/web";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+export interface VoiceInterfaceRef {
+  startConversation: () => Promise<void>;
+  stopConversation: () => void;
+  isConnected: boolean;
+}
 
 interface VoiceInterfaceProps {
   publicKey: string;
@@ -12,6 +18,7 @@ interface VoiceInterfaceProps {
   onConnectionChange?: (isConnected: boolean) => void;
   patientName: string;
   roomNumber: string;
+  hideControls?: boolean;
 }
 
 const NURSING_ASSISTANT_PROMPT = `You are a compassionate nursing assistant conducting a patient check-in. 
@@ -28,7 +35,7 @@ If the patient speaks in Hindi, respond in Hindi. If they speak in English, resp
 
 After gathering all the information, summarize the key findings.`;
 
-export function VoiceInterface({
+export const VoiceInterface = forwardRef<VoiceInterfaceRef, VoiceInterfaceProps>(function VoiceInterface({
   publicKey,
   assistantId,
   onTranscript,
@@ -36,7 +43,8 @@ export function VoiceInterface({
   onConnectionChange,
   patientName,
   roomNumber,
-}: VoiceInterfaceProps) {
+  hideControls = false,
+}, ref) {
   const { toast } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -131,11 +139,22 @@ export function VoiceInterface({
     }
   }, [publicKey, assistantId, patientName, roomNumber, toast]);
 
-  const stopConversation = useCallback(async () => {
+  const stopConversation = useCallback(() => {
     if (vapiRef.current) {
       vapiRef.current.stop();
     }
   }, []);
+
+  // Expose methods via ref
+  useImperativeHandle(ref, () => ({
+    startConversation,
+    stopConversation,
+    isConnected,
+  }), [startConversation, stopConversation, isConnected]);
+
+  if (hideControls) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 p-6 bg-card border border-border rounded-lg">
@@ -196,4 +215,4 @@ export function VoiceInterface({
       )}
     </div>
   );
-}
+});

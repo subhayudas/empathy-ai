@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from "react";
 import { Camera, CameraOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,10 +11,17 @@ interface EmotionData {
   timestamp: string;
 }
 
+export interface VideoEmotionCaptureRef {
+  startCamera: () => Promise<void>;
+  stopCamera: () => void;
+  isEnabled: boolean;
+}
+
 interface VideoEmotionCaptureProps {
-  isActive: boolean;
+  isActive?: boolean;
   onEmotionDetected?: (emotion: EmotionData) => void;
   analysisInterval?: number; // in milliseconds
+  hideControls?: boolean;
 }
 
 const EMOTION_EMOJIS: Record<string, string> = {
@@ -39,11 +46,12 @@ const EMOTION_COLORS: Record<string, string> = {
   unknown: "bg-gray-400",
 };
 
-export function VideoEmotionCapture({
-  isActive,
+export const VideoEmotionCapture = forwardRef<VideoEmotionCaptureRef, VideoEmotionCaptureProps>(function VideoEmotionCapture({
+  isActive = false,
   onEmotionDetected,
   analysisInterval = 8000, // Analyze every 8 seconds
-}: VideoEmotionCaptureProps) {
+  hideControls = false,
+}, ref) {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,6 +116,13 @@ export function VideoEmotionCapture({
     setIsVideoEnabled(false);
     setIsVideoReady(false);
   }, []);
+
+  // Expose methods via ref
+  useImperativeHandle(ref, () => ({
+    startCamera,
+    stopCamera,
+    isEnabled: isVideoEnabled,
+  }), [startCamera, stopCamera, isVideoEnabled]);
 
   const captureFrame = useCallback((): string | null => {
     if (!videoRef.current || !canvasRef.current) {
@@ -308,4 +323,4 @@ export function VideoEmotionCapture({
       </p>
     </div>
   );
-}
+});

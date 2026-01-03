@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.analyze-emotion]
 verify_jwt = false
+
+[functions.analyze-patient]
+verify_jwt = false
