@@ -2,3 +2,6 @@ project_id = "ojuposjetyknqoiuppiu"
 
 [functions.feedback-chat]
 verify_jwt = true
+
+[functions.elevenlabs-conversation-token]
+verify_jwt = false

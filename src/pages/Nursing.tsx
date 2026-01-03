@@ -1,25 +1,36 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { ChatMessages } from "@/components/feedback/ChatMessages";
 import { ChatInput } from "@/components/feedback/ChatInput";
 import { NursingComplete } from "@/components/nursing/NursingComplete";
 import { PatientInfoForm } from "@/components/nursing/PatientInfoForm";
+import { VoiceInterface } from "@/components/nursing/VoiceInterface";
 import { useFeedbackChat } from "@/hooks/use-feedback-chat";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Stethoscope } from "lucide-react";
+import { ArrowLeft, Stethoscope, MessageSquare, Mic } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+
+// ElevenLabs Agent ID - User needs to create this in ElevenLabs dashboard
+// The agent should be configured with Hindi support and voice ID: mr1ubFaLs5xVrh1EqWtc
+const ELEVENLABS_AGENT_ID = ""; // User will need to add their agent ID here
 
 interface PatientInfo {
   patientName: string;
   roomNumber: string;
 }
 
+type InteractionMode = "text" | "voice";
+
 export default function Nursing() {
   const [patientInfo, setPatientInfo] = useState<PatientInfo | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>("voice");
+  const [voiceMessages, setVoiceMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const { messages, isLoading, nursingResult, sendMessage, startConversation, resetChat } = useFeedbackChat();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const handlePatientInfoSubmit = async (info: PatientInfo) => {
     setPatientInfo(info);
@@ -44,7 +55,9 @@ export default function Nursing() {
       console.error("Failed to create session:", error);
     }
 
-    startConversation("nursing_assessment");
+    if (interactionMode === "text") {
+      startConversation("nursing_assessment");
+    }
   };
 
   const handleSendMessage = async (message: string) => {
@@ -63,14 +76,31 @@ export default function Nursing() {
     }
   };
 
+  const handleVoiceTranscript = useCallback((text: string, role: "user" | "assistant") => {
+    setVoiceMessages(prev => [...prev, { role, content: text }]);
+    
+    // Save to database
+    if (sessionId) {
+      supabase.from("feedback_messages").insert({
+        session_id: sessionId,
+        role,
+        content: text,
+      }).then(({ error }) => {
+        if (error) console.error("Failed to save voice message:", error);
+      });
+    }
+  }, [sessionId]);
+
   const handleNewAssessment = () => {
     setPatientInfo(null);
     setSessionId(null);
+    setVoiceMessages([]);
     resetChat();
   };
 
   const handleBack = () => {
-    if (messages.length === 0 || confirm("Are you sure you want to leave? The assessment will not be saved.")) {
+    const hasMessages = interactionMode === "voice" ? voiceMessages.length > 0 : messages.length > 0;
+    if (!hasMessages || confirm("Are you sure you want to leave? The assessment will not be saved.")) {
       handleNewAssessment();
     }
   };
@@ -99,7 +129,44 @@ export default function Nursing() {
       
       <main className="flex-1 container mx-auto px-4 py-8">
         {!patientInfo ? (
-          <PatientInfoForm onSubmit={handlePatientInfoSubmit} />
+          <div className="max-w-md mx-auto space-y-6">
+            {/* Mode Selection */}
+            <div className="flex gap-2 p-1 bg-muted rounded-lg">
+              <Button
+                variant={interactionMode === "voice" ? "default" : "ghost"}
+                className="flex-1"
+                onClick={() => setInteractionMode("voice")}
+              >
+                <Mic className="h-4 w-4 mr-2" />
+                Voice (Hindi/English)
+              </Button>
+              <Button
+                variant={interactionMode === "text" ? "default" : "ghost"}
+                className="flex-1"
+                onClick={() => setInteractionMode("text")}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Text
+              </Button>
+            </div>
+
+            {interactionMode === "voice" && !ELEVENLABS_AGENT_ID && (
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-sm">
+                <p className="font-medium text-destructive">Voice Agent Not Configured</p>
+                <p className="text-muted-foreground mt-1">
+                  Please create an ElevenLabs Conversational AI Agent and add the Agent ID to the code.
+                  Configure it with:
+                </p>
+                <ul className="list-disc list-inside mt-2 text-muted-foreground">
+                  <li>Voice ID: mr1ubFaLs5xVrh1EqWtc</li>
+                  <li>Hindi language support enabled</li>
+                  <li>A nursing assistant system prompt</li>
+                </ul>
+              </div>
+            )}
+
+            <PatientInfoForm onSubmit={handlePatientInfoSubmit} />
+          </div>
         ) : nursingResult ? (
           <NursingComplete
             patientName={patientInfo.patientName}
@@ -107,6 +174,52 @@ export default function Nursing() {
             result={nursingResult}
             onNewAssessment={handleNewAssessment}
           />
+        ) : interactionMode === "voice" ? (
+          <div className="max-w-2xl mx-auto flex flex-col gap-6">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={handleBack}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <div className="flex items-center gap-2">
+                <Stethoscope className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-medium">
+                  Voice Check-In: {patientInfo.patientName} (Room {patientInfo.roomNumber})
+                </h2>
+              </div>
+            </div>
+
+            <VoiceInterface
+              agentId={ELEVENLABS_AGENT_ID}
+              patientName={patientInfo.patientName}
+              roomNumber={patientInfo.roomNumber}
+              onTranscript={handleVoiceTranscript}
+            />
+
+            {/* Voice Conversation Transcript */}
+            {voiceMessages.length > 0 && (
+              <div className="bg-card border border-border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Conversation Transcript</h3>
+                <div className="space-y-3">
+                  {voiceMessages.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={`text-sm p-2 rounded ${
+                        msg.role === "user"
+                          ? "bg-primary/10 ml-8"
+                          : "bg-muted mr-8"
+                      }`}
+                    >
+                      <span className="text-xs text-muted-foreground">
+                        {msg.role === "user" ? "Patient" : "Assistant"}:
+                      </span>
+                      <p className="mt-1">{msg.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="max-w-2xl mx-auto h-[calc(100vh-12rem)] flex flex-col">
             <div className="flex items-center gap-4 mb-4">
