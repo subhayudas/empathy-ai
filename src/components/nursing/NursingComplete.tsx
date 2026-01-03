@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, User, DoorOpen, Heart, AlertTriangle, Activity, Lightbulb, Smile } from "lucide-react";
+import { CheckCircle2, User, DoorOpen, Heart, AlertTriangle, Activity, Lightbulb, Smile, MessageCircle } from "lucide-react";
 
 interface NursingResult {
   condition_summary: string;
@@ -34,7 +34,33 @@ const priorityColors: Record<string, string> = {
   urgent: "bg-red-100 text-red-800 border-red-200",
 };
 
+const DOCTOR_PHONE = "919123388359";
+
 export function NursingComplete({ patientName, roomNumber, result, onNewAssessment }: NursingCompleteProps) {
+  const handleSendToDoctor = () => {
+    const message = `🏥 *Patient Assessment Report*
+
+👤 *Patient:* ${patientName}
+🚪 *Room:* ${roomNumber}
+⚠️ *Priority:* ${result.priority_level.toUpperCase()}
+😊 *Mood:* ${result.mood_assessment}
+${result.dominant_emotion ? `🎭 *Detected Emotion:* ${result.dominant_emotion}` : ""}
+
+📋 *Condition Summary:*
+${result.condition_summary}
+
+${result.immediate_needs.length > 0 ? `🚨 *Immediate Needs:*
+${result.immediate_needs.map(need => `• ${need}`).join("\n")}` : ""}
+
+${result.recommendations ? `💡 *Recommendations:*
+${result.recommendations}` : ""}
+
+_Sent via Patient Care System_`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${DOCTOR_PHONE}?text=${encodedMessage}`;
+    window.open(whatsappUrl, "_blank");
+  };
   return (
     <div className="max-w-xl mx-auto space-y-6">
       <Card>
@@ -132,6 +158,11 @@ export function NursingComplete({ patientName, roomNumber, result, onNewAssessme
             </div>
           )}
 
+          <Button onClick={handleSendToDoctor} className="w-full" variant="outline">
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Send to Doctor via WhatsApp
+          </Button>
+          
           <Button onClick={onNewAssessment} className="w-full">
             New Assessment
           </Button>
