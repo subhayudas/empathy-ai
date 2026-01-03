@@ -1,13 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, User, DoorOpen, Heart, AlertTriangle, Activity } from "lucide-react";
+import { CheckCircle2, User, DoorOpen, Heart, AlertTriangle, Activity, Lightbulb, Smile } from "lucide-react";
 
 interface NursingResult {
   condition_summary: string;
   mood_assessment: string;
   immediate_needs: string[];
   priority_level: string;
+  recommendations?: string;
+  dominant_emotion?: string;
 }
 
 interface NursingCompleteProps {
@@ -103,6 +105,30 @@ export function NursingComplete({ patientName, roomNumber, result, onNewAssessme
                   </Badge>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Dominant Emotion from Video Analysis */}
+          {result.dominant_emotion && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Smile className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Detected Emotion</span>
+              </div>
+              <span className="capitalize font-medium">{result.dominant_emotion}</span>
+            </div>
+          )}
+
+          {/* Recommendations */}
+          {result.recommendations && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Recommendations</span>
+              </div>
+              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                {result.recommendations}
+              </p>
             </div>
           )}
 
