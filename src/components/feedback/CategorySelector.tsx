@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ClipboardCheck, HeartPulse, Users, Stethoscope } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PhoneCallOption } from "./PhoneCallOption";
 
 interface CategorySelectorProps {
   onSelect: (category: string) => void;
@@ -62,6 +63,15 @@ export function CategorySelector({ onSelect }: CategorySelectorProps) {
             </Card>
           );
         })}
+      </div>
+
+      {/* Phone Call Option */}
+      <div className="border-t border-border pt-8">
+        <div className="text-center mb-4">
+          <h3 className="text-lg font-medium text-foreground">Prefer a Phone Call?</h3>
+          <p className="text-sm text-muted-foreground">We can call you to collect your feedback</p>
+        </div>
+        <PhoneCallOption />
       </div>
 
       {/* Nursing Assessment Card */}
