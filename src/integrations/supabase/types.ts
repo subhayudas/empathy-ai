@@ -50,8 +50,15 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["feedback_category"]
           completed_at: string | null
+          condition_summary: string | null
           created_at: string
           id: string
+          immediate_needs: string[] | null
+          is_nursing_assessment: boolean | null
+          mood_assessment: string | null
+          patient_name: string | null
+          priority_level: string | null
+          room_number: string | null
           satisfaction_score: number | null
           status: string
           summary: string | null
@@ -60,8 +67,15 @@ export type Database = {
         Insert: {
           category: Database["public"]["Enums"]["feedback_category"]
           completed_at?: string | null
+          condition_summary?: string | null
           created_at?: string
           id?: string
+          immediate_needs?: string[] | null
+          is_nursing_assessment?: boolean | null
+          mood_assessment?: string | null
+          patient_name?: string | null
+          priority_level?: string | null
+          room_number?: string | null
           satisfaction_score?: number | null
           status?: string
           summary?: string | null
@@ -70,8 +84,15 @@ export type Database = {
         Update: {
           category?: Database["public"]["Enums"]["feedback_category"]
           completed_at?: string | null
+          condition_summary?: string | null
           created_at?: string
           id?: string
+          immediate_needs?: string[] | null
+          is_nursing_assessment?: boolean | null
+          mood_assessment?: string | null
+          patient_name?: string | null
+          priority_level?: string | null
+          room_number?: string | null
           satisfaction_score?: number | null
           status?: string
           summary?: string | null
@@ -143,6 +164,7 @@ export type Database = {
         | "post_visit"
         | "treatment_experience"
         | "service_quality"
+        | "nursing_assessment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -275,6 +297,7 @@ export const Constants = {
         "post_visit",
         "treatment_experience",
         "service_quality",
+        "nursing_assessment",
       ],
     },
   },
