@@ -9,6 +9,7 @@ interface VoiceInterfaceProps {
   assistantId: string;
   onTranscript?: (text: string, role: "user" | "assistant") => void;
   onAssessmentComplete?: (result: any) => void;
+  onConnectionChange?: (isConnected: boolean) => void;
   patientName: string;
   roomNumber: string;
 }
@@ -32,6 +33,7 @@ export function VoiceInterface({
   assistantId,
   onTranscript,
   onAssessmentComplete,
+  onConnectionChange,
   patientName,
   roomNumber,
 }: VoiceInterfaceProps) {
@@ -51,6 +53,7 @@ export function VoiceInterface({
       console.log("Vapi call started");
       setIsConnected(true);
       setIsConnecting(false);
+      onConnectionChange?.(true);
       toast({
         title: "Connected",
         description: "Voice assistant is ready. Start speaking!",
@@ -61,6 +64,7 @@ export function VoiceInterface({
       console.log("Vapi call ended");
       setIsConnected(false);
       setIsSpeaking(false);
+      onConnectionChange?.(false);
     });
 
     vapi.on("speech-start", () => {
@@ -95,7 +99,7 @@ export function VoiceInterface({
     return () => {
       vapi.stop();
     };
-  }, [publicKey, onTranscript, toast]);
+  }, [publicKey, onTranscript, onConnectionChange, toast]);
 
   const startConversation = useCallback(async () => {
     if (!vapiRef.current || !publicKey || !assistantId) {
