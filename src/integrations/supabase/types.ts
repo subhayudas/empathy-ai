@@ -100,6 +100,39 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          call_id: string | null
+          call_scheduled: boolean
+          created_at: string
+          id: string
+          name: string
+          opt_in_call: boolean
+          phone_number: string
+          updated_at: string
+        }
+        Insert: {
+          call_id?: string | null
+          call_scheduled?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          opt_in_call?: boolean
+          phone_number: string
+          updated_at?: string
+        }
+        Update: {
+          call_id?: string | null
+          call_scheduled?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          opt_in_call?: boolean
+          phone_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

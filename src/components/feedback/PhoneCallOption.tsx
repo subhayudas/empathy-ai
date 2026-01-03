@@ -2,17 +2,28 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Phone, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export function PhoneCallOption() {
+  const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [callInitiated, setCallInitiated] = useState(false);
   const { toast } = useToast();
 
-  const handleCallRequest = async () => {
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter your name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!phoneNumber.trim()) {
       toast({
         title: "Phone number required",
@@ -36,20 +47,13 @@ export function PhoneCallOption() {
     setIsLoading(true);
 
     try {
-      const assistantId = import.meta.env.VITE_VAPI_ASSISTANT_ID;
-      if (!assistantId) {
-        toast({
-          title: "Calling is not configured",
-          description: "Missing Vapi Assistant ID configuration.",
-          variant: "destructive",
-        });
-        return;
-      }
+      const formattedPhone = phoneNumber.startsWith("+") ? phoneNumber : `+${cleanedNumber}`;
 
-      const { data, error } = await supabase.functions.invoke("vapi-outbound-call", {
+      const { data, error } = await supabase.functions.invoke("submit-lead", {
         body: {
-          phoneNumber: phoneNumber.startsWith("+") ? phoneNumber : `+${cleanedNumber}`,
-          assistantId,
+          name: name.trim(),
+          phoneNumber: formattedPhone,
+          optInCall: true,
         },
       });
 
@@ -57,7 +61,7 @@ export function PhoneCallOption() {
 
       if (!data?.success) {
         toast({
-          title: "Failed to initiate call",
+          title: "Failed to submit",
           description: data?.error || "Please try again later.",
           variant: "destructive",
         });
@@ -65,14 +69,28 @@ export function PhoneCallOption() {
       }
 
       setCallInitiated(true);
-      toast({
-        title: "Call initiated!",
-        description: "You will receive a call shortly. Please keep your phone ready.",
-      });
+      
+      if (data.callInitiated) {
+        toast({
+          title: "Call initiated!",
+          description: "You will receive a call shortly. Please keep your phone ready.",
+        });
+      } else if (data.callError) {
+        toast({
+          title: "Submitted, but call failed",
+          description: data.callError,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Submitted!",
+          description: "Your information has been saved.",
+        });
+      }
     } catch (error) {
-      console.error("Failed to initiate call:", error);
+      console.error("Failed to submit lead:", error);
       toast({
-        title: "Failed to initiate call",
+        title: "Failed to submit",
         description: error instanceof Error ? error.message : "Please try again later.",
         variant: "destructive",
       });
@@ -99,6 +117,7 @@ export function PhoneCallOption() {
             variant="outline"
             onClick={() => {
               setCallInitiated(false);
+              setName("");
               setPhoneNumber("");
             }}
           >
@@ -119,25 +138,38 @@ export function PhoneCallOption() {
       </CardHeader>
       <CardContent>
         <CardDescription className="text-center mb-4">
-          Enter your phone number and we'll call you to collect your feedback
+          Enter your details and we'll call you to collect your feedback
         </CardDescription>
-        <div className="space-y-3">
-          <Input
-            type="tel"
-            placeholder="+91 9876543210"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            className="text-center"
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Your Name</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="+91 9876543210"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
+          </div>
           <Button 
             className="w-full" 
-            onClick={handleCallRequest}
+            onClick={handleSubmit}
             disabled={isLoading}
           >
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Initiating Call...
+                Submitting...
               </>
             ) : (
               <>
