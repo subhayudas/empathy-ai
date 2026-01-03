@@ -52,6 +52,9 @@ export type Database = {
           completed_at: string | null
           condition_summary: string | null
           created_at: string
+          dominant_emotion: string | null
+          emotion_confidence: number | null
+          emotion_history: Json | null
           id: string
           immediate_needs: string[] | null
           is_nursing_assessment: boolean | null
@@ -69,6 +72,9 @@ export type Database = {
           completed_at?: string | null
           condition_summary?: string | null
           created_at?: string
+          dominant_emotion?: string | null
+          emotion_confidence?: number | null
+          emotion_history?: Json | null
           id?: string
           immediate_needs?: string[] | null
           is_nursing_assessment?: boolean | null
@@ -86,6 +92,9 @@ export type Database = {
           completed_at?: string | null
           condition_summary?: string | null
           created_at?: string
+          dominant_emotion?: string | null
+          emotion_confidence?: number | null
+          emotion_history?: Json | null
           id?: string
           immediate_needs?: string[] | null
           is_nursing_assessment?: boolean | null

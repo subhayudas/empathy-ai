@@ -5,11 +5,19 @@ import { ChatInput } from "@/components/feedback/ChatInput";
 import { NursingComplete } from "@/components/nursing/NursingComplete";
 import { PatientInfoForm } from "@/components/nursing/PatientInfoForm";
 import { VoiceInterface } from "@/components/nursing/VoiceInterface";
+import { VideoEmotionCapture } from "@/components/nursing/VideoEmotionCapture";
 import { useFeedbackChat } from "@/hooks/use-feedback-chat";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Stethoscope, MessageSquare, Mic } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+
+interface EmotionData {
+  emotion: string;
+  confidence: number;
+  all_emotions: Record<string, number>;
+  timestamp: string;
+}
 
 // Vapi Configuration - Get these from your Vapi dashboard
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
@@ -28,6 +36,8 @@ export default function Nursing() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [interactionMode, setInteractionMode] = useState<InteractionMode>("voice");
   const [voiceMessages, setVoiceMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const [emotionHistory, setEmotionHistory] = useState<EmotionData[]>([]);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
   const { messages, isLoading, nursingResult, sendMessage, startConversation, resetChat } = useFeedbackChat();
   const { user } = useAuth();
 
@@ -90,10 +100,16 @@ export default function Nursing() {
     }
   }, [sessionId]);
 
+  const handleEmotionDetected = useCallback((emotion: EmotionData) => {
+    setEmotionHistory(prev => [...prev, emotion]);
+  }, []);
+
   const handleNewAssessment = () => {
     setPatientInfo(null);
     setSessionId(null);
     setVoiceMessages([]);
+    setEmotionHistory([]);
+    setIsVoiceActive(false);
     resetChat();
   };
 
@@ -104,8 +120,32 @@ export default function Nursing() {
     }
   };
 
+  // Calculate dominant emotion
+  const getDominantEmotion = (): { emotion: string; confidence: number } | null => {
+    if (emotionHistory.length === 0) return null;
+    
+    const emotionCounts: Record<string, { count: number; totalConfidence: number }> = {};
+    emotionHistory.forEach(e => {
+      if (!emotionCounts[e.emotion]) {
+        emotionCounts[e.emotion] = { count: 0, totalConfidence: 0 };
+      }
+      emotionCounts[e.emotion].count++;
+      emotionCounts[e.emotion].totalConfidence += e.confidence;
+    });
+
+    let dominant = { emotion: "neutral", count: 0, avgConfidence: 0 };
+    Object.entries(emotionCounts).forEach(([emotion, data]) => {
+      if (data.count > dominant.count) {
+        dominant = { emotion, count: data.count, avgConfidence: data.totalConfidence / data.count };
+      }
+    });
+
+    return { emotion: dominant.emotion, confidence: dominant.avgConfidence };
+  };
+
   // Save completion result to database
   if (nursingResult && sessionId) {
+    const dominantEmotion = getDominantEmotion();
     supabase
       .from("feedback_sessions")
       .update({
@@ -115,6 +155,9 @@ export default function Nursing() {
         priority_level: nursingResult.priority_level,
         status: "completed",
         completed_at: new Date().toISOString(),
+        emotion_history: emotionHistory as unknown as null,
+        dominant_emotion: dominantEmotion?.emotion || null,
+        emotion_confidence: dominantEmotion?.confidence || null,
       })
       .eq("id", sessionId)
       .then(({ error }) => {
@@ -170,7 +213,7 @@ export default function Nursing() {
             onNewAssessment={handleNewAssessment}
           />
         ) : interactionMode === "voice" ? (
-          <div className="max-w-2xl mx-auto flex flex-col gap-6">
+          <div className="max-w-4xl mx-auto flex flex-col gap-6">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -184,13 +227,24 @@ export default function Nursing() {
               </div>
             </div>
 
-            <VoiceInterface
-              publicKey={VAPI_PUBLIC_KEY}
-              assistantId={VAPI_ASSISTANT_ID}
-              patientName={patientInfo.patientName}
-              roomNumber={patientInfo.roomNumber}
-              onTranscript={handleVoiceTranscript}
-            />
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Voice Interface */}
+              <VoiceInterface
+                publicKey={VAPI_PUBLIC_KEY}
+                assistantId={VAPI_ASSISTANT_ID}
+                patientName={patientInfo.patientName}
+                roomNumber={patientInfo.roomNumber}
+                onTranscript={handleVoiceTranscript}
+                onConnectionChange={setIsVoiceActive}
+              />
+
+              {/* Video Emotion Capture */}
+              <VideoEmotionCapture
+                isActive={isVoiceActive}
+                onEmotionDetected={handleEmotionDetected}
+                analysisInterval={8000}
+              />
+            </div>
 
             {/* Voice Conversation Transcript */}
             {voiceMessages.length > 0 && (
