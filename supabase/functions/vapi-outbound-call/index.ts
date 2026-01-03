@@ -12,6 +12,12 @@ serve(async (req) => {
   }
 
   try {
+    const VAPI_API_KEY = Deno.env.get('VAPI_API_KEY');
+    if (!VAPI_API_KEY) {
+      console.error("VAPI_API_KEY is not configured");
+      throw new Error('VAPI_API_KEY is not configured in secrets');
+    }
+
     const VAPI_PHONE_NUMBER_ID = Deno.env.get('VAPI_PHONE_NUMBER_ID');
     if (!VAPI_PHONE_NUMBER_ID) {
       console.error("VAPI_PHONE_NUMBER_ID is not configured");
@@ -35,6 +41,7 @@ serve(async (req) => {
     const response = await fetch("https://api.vapi.ai/call/phone", {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${VAPI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
