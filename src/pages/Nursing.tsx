@@ -10,11 +10,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Stethoscope, MessageSquare, Mic } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
 
-// ElevenLabs Agent ID - User needs to create this in ElevenLabs dashboard
-// The agent should be configured with Hindi support and voice ID: mr1ubFaLs5xVrh1EqWtc
-const ELEVENLABS_AGENT_ID = ""; // User will need to add their agent ID here
+// Vapi Public Key - Get this from your Vapi dashboard
+const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
 
 interface PatientInfo {
   patientName: string;
@@ -30,7 +28,6 @@ export default function Nursing() {
   const [voiceMessages, setVoiceMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const { messages, isLoading, nursingResult, sendMessage, startConversation, resetChat } = useFeedbackChat();
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const handlePatientInfoSubmit = async (info: PatientInfo) => {
     setPatientInfo(info);
@@ -150,18 +147,13 @@ export default function Nursing() {
               </Button>
             </div>
 
-            {interactionMode === "voice" && !ELEVENLABS_AGENT_ID && (
+            {interactionMode === "voice" && !VAPI_PUBLIC_KEY && (
               <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-sm">
                 <p className="font-medium text-destructive">Voice Agent Not Configured</p>
                 <p className="text-muted-foreground mt-1">
-                  Please create an ElevenLabs Conversational AI Agent and add the Agent ID to the code.
-                  Configure it with:
+                  Please add your Vapi Public Key to enable voice conversations.
+                  Add <code className="bg-muted px-1 rounded">VITE_VAPI_PUBLIC_KEY</code> to your environment variables.
                 </p>
-                <ul className="list-disc list-inside mt-2 text-muted-foreground">
-                  <li>Voice ID: mr1ubFaLs5xVrh1EqWtc</li>
-                  <li>Hindi language support enabled</li>
-                  <li>A nursing assistant system prompt</li>
-                </ul>
               </div>
             )}
 
@@ -190,7 +182,7 @@ export default function Nursing() {
             </div>
 
             <VoiceInterface
-              agentId={ELEVENLABS_AGENT_ID}
+              publicKey={VAPI_PUBLIC_KEY}
               patientName={patientInfo.patientName}
               roomNumber={patientInfo.roomNumber}
               onTranscript={handleVoiceTranscript}
