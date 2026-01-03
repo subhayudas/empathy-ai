@@ -55,6 +55,7 @@ serve(async (req) => {
     console.log("Vapi API response status:", response.status);
     console.log("Vapi API response:", responseText);
 
+
     if (!response.ok) {
       // Try to parse as JSON, otherwise use raw text
       let errorMessage: string;
@@ -64,7 +65,19 @@ serve(async (req) => {
       } catch {
         errorMessage = responseText || `HTTP ${response.status}`;
       }
-      throw new Error(`Vapi API error: ${errorMessage}`);
+
+      // Return 200 so the client can read the payload (avoid generic non-2xx invoke errors)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          status: response.status,
+          error: errorMessage,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Parse successful response
@@ -83,8 +96,10 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
+
+    // Return 200 so the client can render a friendly message instead of a generic invoke error
+    return new Response(JSON.stringify({ success: false, status: 500, error: errorMessage }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
