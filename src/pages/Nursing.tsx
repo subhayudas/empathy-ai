@@ -4,14 +4,16 @@ import { ChatMessages } from "@/components/feedback/ChatMessages";
 import { ChatInput } from "@/components/feedback/ChatInput";
 import { NursingComplete } from "@/components/nursing/NursingComplete";
 import { PatientInfoForm } from "@/components/nursing/PatientInfoForm";
-import { OutboundCallInterface } from "@/components/nursing/OutboundCallInterface";
+import { VoiceInterface } from "@/components/nursing/VoiceInterface";
 import { useFeedbackChat } from "@/hooks/use-feedback-chat";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Stethoscope, MessageSquare, Phone } from "lucide-react";
+import { ArrowLeft, Stethoscope, MessageSquare, Mic } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
-// Vapi Assistant ID - Create an assistant in Vapi dashboard
+// Vapi Configuration - Get these from your Vapi dashboard
+const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
+// Create an assistant in Vapi dashboard and paste the ID here
 const VAPI_ASSISTANT_ID = import.meta.env.VITE_VAPI_ASSISTANT_ID || "";
 
 interface PatientInfo {
@@ -134,8 +136,8 @@ export default function Nursing() {
                 className="flex-1"
                 onClick={() => setInteractionMode("voice")}
               >
-                <Phone className="h-4 w-4 mr-2" />
-                Phone Call (Hindi/English)
+                <Mic className="h-4 w-4 mr-2" />
+                Voice (Hindi/English)
               </Button>
               <Button
                 variant={interactionMode === "text" ? "default" : "ghost"}
@@ -147,11 +149,13 @@ export default function Nursing() {
               </Button>
             </div>
 
-            {interactionMode === "voice" && !VAPI_ASSISTANT_ID && (
+            {interactionMode === "voice" && (!VAPI_PUBLIC_KEY || !VAPI_ASSISTANT_ID) && (
               <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-sm">
                 <p className="font-medium text-destructive">Voice Agent Not Configured</p>
                 <p className="text-muted-foreground mt-1">
-                  Please add <code className="bg-muted px-1 rounded">VITE_VAPI_ASSISTANT_ID</code> to .env from your Vapi dashboard.
+                  Please configure Vapi to enable voice conversations:
+                  <br />1. Add <code className="bg-muted px-1 rounded">VITE_VAPI_PUBLIC_KEY</code> to .env
+                  <br />2. Create an assistant in Vapi dashboard and add <code className="bg-muted px-1 rounded">VITE_VAPI_ASSISTANT_ID</code> to .env
                 </p>
               </div>
             )}
@@ -175,16 +179,42 @@ export default function Nursing() {
               <div className="flex items-center gap-2">
                 <Stethoscope className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-medium">
-                  Phone Check-In: {patientInfo.patientName} (Room {patientInfo.roomNumber})
+                  Voice Check-In: {patientInfo.patientName} (Room {patientInfo.roomNumber})
                 </h2>
               </div>
             </div>
 
-            <OutboundCallInterface
+            <VoiceInterface
+              publicKey={VAPI_PUBLIC_KEY}
               assistantId={VAPI_ASSISTANT_ID}
               patientName={patientInfo.patientName}
               roomNumber={patientInfo.roomNumber}
+              onTranscript={handleVoiceTranscript}
             />
+
+            {/* Voice Conversation Transcript */}
+            {voiceMessages.length > 0 && (
+              <div className="bg-card border border-border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Conversation Transcript</h3>
+                <div className="space-y-3">
+                  {voiceMessages.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={`text-sm p-2 rounded ${
+                        msg.role === "user"
+                          ? "bg-primary/10 ml-8"
+                          : "bg-muted mr-8"
+                      }`}
+                    >
+                      <span className="text-xs text-muted-foreground">
+                        {msg.role === "user" ? "Patient" : "Assistant"}:
+                      </span>
+                      <p className="mt-1">{msg.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="max-w-2xl mx-auto h-[calc(100vh-12rem)] flex flex-col">
