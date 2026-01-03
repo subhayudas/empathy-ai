@@ -37,15 +37,32 @@ export function PhoneCallOption() {
 
     try {
       const assistantId = import.meta.env.VITE_VAPI_ASSISTANT_ID;
-      
+      if (!assistantId) {
+        toast({
+          title: "Calling is not configured",
+          description: "Missing Vapi Assistant ID configuration.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("vapi-outbound-call", {
-        body: { 
+        body: {
           phoneNumber: phoneNumber.startsWith("+") ? phoneNumber : `+${cleanedNumber}`,
-          assistantId 
+          assistantId,
         },
       });
 
       if (error) throw error;
+
+      if (!data?.success) {
+        toast({
+          title: "Failed to initiate call",
+          description: data?.error || "Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       setCallInitiated(true);
       toast({
