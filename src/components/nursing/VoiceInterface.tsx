@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface VoiceInterfaceProps {
   publicKey: string;
+  assistantId: string;
   onTranscript?: (text: string, role: "user" | "assistant") => void;
   onAssessmentComplete?: (result: any) => void;
   patientName: string;
@@ -28,6 +29,7 @@ After gathering all the information, summarize the key findings.`;
 
 export function VoiceInterface({
   publicKey,
+  assistantId,
   onTranscript,
   onAssessmentComplete,
   patientName,
@@ -96,39 +98,23 @@ export function VoiceInterface({
   }, [publicKey, onTranscript, toast]);
 
   const startConversation = useCallback(async () => {
-    if (!vapiRef.current || !publicKey) {
+    if (!vapiRef.current || !publicKey || !assistantId) {
       toast({
         variant: "destructive",
         title: "Configuration Error",
-        description: "Voice assistant is not configured properly.",
+        description: "Voice assistant is not configured properly. Please provide an assistant ID.",
       });
       return;
     }
 
     setIsConnecting(true);
     try {
-      await vapiRef.current.start({
-        model: {
-          provider: "openai",
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: `${NURSING_ASSISTANT_PROMPT}\n\nPatient Information:\n- Name: ${patientName}\n- Room: ${roomNumber}`,
-            },
-          ],
+      // Use the pre-configured assistant ID instead of transient assistant
+      await vapiRef.current.start(assistantId, {
+        variableValues: {
+          patientName: patientName,
+          roomNumber: roomNumber,
         },
-        voice: {
-          provider: "11labs",
-          voiceId: "mr1ubFaLs5xVrh1EqWtc",
-        },
-        transcriber: {
-          provider: "deepgram",
-          model: "nova-2",
-          language: "multi",
-        },
-        name: "Nursing Assistant",
-        firstMessage: `Namaste ${patientName} ji! Main aapki nursing assistant hoon. Aaj aap kaisa mehsoos kar rahe hain? Hello ${patientName}! I'm your nursing assistant. How are you feeling today?`,
       });
     } catch (error) {
       console.error("Failed to start Vapi conversation:", error);
@@ -139,7 +125,7 @@ export function VoiceInterface({
         description: error instanceof Error ? error.message : "Could not start voice conversation",
       });
     }
-  }, [publicKey, patientName, roomNumber, toast]);
+  }, [publicKey, assistantId, patientName, roomNumber, toast]);
 
   const stopConversation = useCallback(async () => {
     if (vapiRef.current) {

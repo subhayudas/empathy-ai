@@ -11,8 +11,10 @@ import { ArrowLeft, Stethoscope, MessageSquare, Mic } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
-// Vapi Public Key - Get this from your Vapi dashboard
+// Vapi Configuration - Get these from your Vapi dashboard
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
+// Create an assistant in Vapi dashboard and paste the ID here
+const VAPI_ASSISTANT_ID = import.meta.env.VITE_VAPI_ASSISTANT_ID || "";
 
 interface PatientInfo {
   patientName: string;
@@ -147,12 +149,13 @@ export default function Nursing() {
               </Button>
             </div>
 
-            {interactionMode === "voice" && !VAPI_PUBLIC_KEY && (
+            {interactionMode === "voice" && (!VAPI_PUBLIC_KEY || !VAPI_ASSISTANT_ID) && (
               <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-sm">
                 <p className="font-medium text-destructive">Voice Agent Not Configured</p>
                 <p className="text-muted-foreground mt-1">
-                  Please add your Vapi Public Key to enable voice conversations.
-                  Add <code className="bg-muted px-1 rounded">VITE_VAPI_PUBLIC_KEY</code> to your environment variables.
+                  Please configure Vapi to enable voice conversations:
+                  <br />1. Add <code className="bg-muted px-1 rounded">VITE_VAPI_PUBLIC_KEY</code> to .env
+                  <br />2. Create an assistant in Vapi dashboard and add <code className="bg-muted px-1 rounded">VITE_VAPI_ASSISTANT_ID</code> to .env
                 </p>
               </div>
             )}
@@ -183,6 +186,7 @@ export default function Nursing() {
 
             <VoiceInterface
               publicKey={VAPI_PUBLIC_KEY}
+              assistantId={VAPI_ASSISTANT_ID}
               patientName={patientInfo.patientName}
               roomNumber={patientInfo.roomNumber}
               onTranscript={handleVoiceTranscript}
