@@ -1,100 +1,64 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, HeartPulse, Users, Stethoscope } from "lucide-react";
+import { Stethoscope, Phone, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { PhoneCallOption } from "./PhoneCallOption";
 
-interface CategorySelectorProps {
-  onSelect: (category: string) => void;
-}
+const EXTERNAL_CALL_URL = "https://vitalsenseagent.netlify.app";
 
-const categories = [
-  {
-    id: "post_visit",
-    title: "Post-Visit Satisfaction",
-    description: "Share your overall experience from your recent visit",
-    icon: ClipboardCheck,
-  },
-  {
-    id: "treatment_experience",
-    title: "Treatment Experience",
-    description: "Tell us about your treatment and care quality",
-    icon: HeartPulse,
-  },
-  {
-    id: "service_quality",
-    title: "Service Quality",
-    description: "Rate our staff, facilities, and general service",
-    icon: Users,
-  },
-];
-
-export function CategorySelector({ onSelect }: CategorySelectorProps) {
+export function CategorySelector() {
   const navigate = useNavigate();
+
+  const handleGetCall = () => {
+    window.open(EXTERNAL_CALL_URL, "_blank");
+  };
 
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-foreground">What would you like to share feedback about?</h2>
-        <p className="text-muted-foreground mt-2">Select a category to start the conversation</p>
+        <h2 className="text-2xl font-semibold text-foreground">How would you like to share your feedback?</h2>
+        <p className="text-muted-foreground mt-2">Choose an option below</p>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-3">
-        {categories.map((category) => {
-          const Icon = category.icon;
-          return (
-            <Card
-              key={category.id}
-              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
-              onClick={() => onSelect(category.id)}
-            >
-              <CardHeader className="text-center pb-2">
-                <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-lg">{category.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center">{category.description}</CardDescription>
-                <Button className="w-full mt-4" variant="outline">
-                  Start Feedback
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Phone Call Option */}
-      <div className="border-t border-border pt-8">
-        <div className="text-center mb-4">
-          <h3 className="text-lg font-medium text-foreground">Prefer a Phone Call?</h3>
-          <p className="text-sm text-muted-foreground">We can call you to collect your feedback</p>
-        </div>
-        <PhoneCallOption />
-      </div>
-
-      {/* Nursing Assessment Card */}
-      <div className="border-t border-border pt-8">
-        <div className="text-center mb-4">
-          <h3 className="text-lg font-medium text-foreground">For Nursing Staff</h3>
-        </div>
+      <div className="grid gap-6 md:grid-cols-2 max-w-2xl mx-auto">
+        {/* Nursing Staff Option */}
         <Card
-          className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group max-w-md mx-auto"
+          className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
           onClick={() => navigate("/nursing")}
         >
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
               <Stethoscope className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-lg">Nursing Check-In</CardTitle>
+            <CardTitle className="text-lg">For Nursing Staff</CardTitle>
           </CardHeader>
           <CardContent>
             <CardDescription className="text-center">
-              Assess patient condition, mood, and immediate needs
+              Assess patient condition, mood, and immediate needs with AI-powered analysis
             </CardDescription>
             <Button className="w-full mt-4" variant="outline">
               Start Assessment
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Phone Call Option */}
+        <Card
+          className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
+          onClick={handleGetCall}
+        >
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <Phone className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-lg">Prefer a Phone Call?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="text-center">
+              We'll call you to collect your feedback over the phone
+            </CardDescription>
+            <Button className="w-full mt-4" variant="outline">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Get a Call
             </Button>
           </CardContent>
         </Card>
