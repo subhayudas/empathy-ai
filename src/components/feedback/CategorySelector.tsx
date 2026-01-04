@@ -34,48 +34,8 @@ export function CategorySelector({ onSelect }: CategorySelectorProps) {
 
   return (
     <div className="space-y-8">
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold text-foreground">What would you like to share feedback about?</h2>
-        <p className="text-muted-foreground mt-2">Select a category to start the conversation</p>
-      </div>
-      
-      <div className="grid gap-4 md:grid-cols-3">
-        {categories.map((category) => {
-          const Icon = category.icon;
-          return (
-            <Card
-              key={category.id}
-              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
-              onClick={() => onSelect(category.id)}
-            >
-              <CardHeader className="text-center pb-2">
-                <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-lg">{category.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center">{category.description}</CardDescription>
-                <Button className="w-full mt-4" variant="outline">
-                  Start Feedback
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Phone Call Option */}
-      <div className="border-t border-border pt-8">
-        <div className="text-center mb-4">
-          <h3 className="text-lg font-medium text-foreground">Prefer a Phone Call?</h3>
-          <p className="text-sm text-muted-foreground">We can call you to collect your feedback</p>
-        </div>
-        <PhoneCallOption />
-      </div>
-
       {/* Nursing Assessment Card */}
-      <div className="border-t border-border pt-8">
+      <div>
         <div className="text-center mb-4">
           <h3 className="text-lg font-medium text-foreground">For Nursing Staff</h3>
         </div>
@@ -98,6 +58,49 @@ export function CategorySelector({ onSelect }: CategorySelectorProps) {
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Phone Call Option */}
+      <div className="border-t border-border pt-8">
+        <div className="text-center mb-4">
+          <h3 className="text-lg font-medium text-foreground">Prefer a Phone Call?</h3>
+          <p className="text-sm text-muted-foreground">We can call you to collect your feedback</p>
+        </div>
+        <PhoneCallOption />
+      </div>
+
+      {/* Feedback Categories */}
+      <div className="border-t border-border pt-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-foreground">What would you like to share feedback about?</h2>
+          <p className="text-muted-foreground mt-2">Select a category to start the conversation</p>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-3 mt-6">
+          {categories.map((category) => {
+            const Icon = category.icon;
+            return (
+              <Card
+                key={category.id}
+                className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group"
+                onClick={() => onSelect(category.id)}
+              >
+                <CardHeader className="text-center pb-2">
+                  <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">{category.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-center">{category.description}</CardDescription>
+                  <Button className="w-full mt-4" variant="outline">
+                    Start Feedback
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
