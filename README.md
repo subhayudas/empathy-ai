@@ -1,73 +1,148 @@
-# Welcome to your Lovable project
+# VitalSense - Healthcare Feedback & Patient Assessment Platform
 
-## Project info
+A modern healthcare feedback collection and patient assessment platform built with React, featuring AI-powered voice interactions and real-time emotion detection.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![VitalSense](https://img.shields.io/badge/VitalSense-Healthcare-blue)
+![React](https://img.shields.io/badge/React-18.3-61dafb)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8)
 
-## How can I edit this code?
+## 🏥 Overview
 
-There are several ways of editing your application.
+VitalSense is a comprehensive healthcare feedback and patient assessment solution designed to:
 
-**Use Lovable**
+- **Collect Patient Feedback** - Gather feedback on room cleanliness, staff interactions, and food quality through an intuitive chat interface
+- **Nursing Staff Assessments** - Enable nursing staff to conduct patient check-ins with AI-powered voice conversations
+- **Emotion Detection** - Real-time facial emotion analysis during patient interactions
+- **AI-Powered Analysis** - Automatic patient condition assessment and priority recommendations
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## ✨ Features
 
-Changes made via Lovable will be committed automatically to this repo.
+### For Patients
+- 💬 **Chat-based Feedback** - Natural conversation flow for collecting feedback
+- 📞 **Phone Call Option** - Request a callback for verbal feedback
+- 🏷️ **Category Selection** - Organized feedback categories (Room, Staff, Food)
 
-**Use your preferred IDE**
+### For Nursing Staff
+- 🎙️ **Voice Interface** - AI-powered voice conversations using Vapi
+- 📹 **Video Emotion Capture** - Real-time emotion detection during assessments
+- 📊 **AI Analysis** - Automated patient condition summaries and recommendations
+- 🔴 **Priority Levels** - Automatic priority assignment (Low, Medium, High, Critical)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Admin Features
+- 📈 **Dashboard** - Overview of feedback and assessments
+- 🔐 **Role-based Access** - Secure admin authentication
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🛠️ Tech Stack
 
-Follow these steps:
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **Backend**: Supabase (Database, Auth, Edge Functions)
+- **Voice AI**: Vapi AI for voice conversations
+- **AI Analysis**: Lovable AI Gateway (Gemini/GPT models)
+- **State Management**: TanStack React Query
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🚀 Getting Started
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Node.js 18+ 
+- npm or bun package manager
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <YOUR_GIT_URL>
+   cd <YOUR_PROJECT_NAME>
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open your browser**
+   Navigate to `http://localhost:5173`
+
+## 📁 Project Structure
+
+```
+src/
+├── components/
+│   ├── feedback/        # Feedback collection components
+│   │   ├── CategorySelector.tsx
+│   │   ├── ChatInput.tsx
+│   │   ├── ChatMessages.tsx
+│   │   └── PhoneCallOption.tsx
+│   ├── nursing/         # Nursing assessment components
+│   │   ├── PatientInfoForm.tsx
+│   │   ├── VoiceInterface.tsx
+│   │   ├── VideoEmotionCapture.tsx
+│   │   └── NursingComplete.tsx
+│   ├── layout/          # Layout components
+│   └── ui/              # shadcn/ui components
+├── pages/
+│   ├── Index.tsx        # Landing page
+│   ├── Feedback.tsx     # Patient feedback page
+│   ├── Nursing.tsx      # Nursing assessment page
+│   └── AdminDashboard.tsx
+├── hooks/               # Custom React hooks
+└── integrations/        # Supabase integration
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The following environment variables are automatically configured:
 
-**Use GitHub Codespaces**
+- `VITE_SUPABASE_URL` - Supabase project URL
+- `VITE_SUPABASE_PUBLISHABLE_KEY` - Supabase anon key
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Edge Function Secrets
 
-## What technologies are used for this project?
+Configure these in your Lovable Cloud settings:
 
-This project is built with:
+- `VAPI_API_KEY` - Vapi AI API key
+- `VAPI_ASSISTANT_ID` - Vapi Assistant ID
+- `LOVABLE_API_KEY` - Auto-provisioned for AI features
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📱 Pages
 
-## How can I deploy this project?
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page |
+| `/feedback` | Patient feedback collection |
+| `/nursing` | Nursing staff patient assessment |
+| `/admin` | Admin dashboard |
+| `/auth` | Authentication page |
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 🔒 Security
 
-## Can I connect a custom domain to my Lovable project?
+- Row Level Security (RLS) enabled on all database tables
+- Role-based access control for admin features
+- Secure API key management via Supabase secrets
 
-Yes, you can!
+## 🤝 Contributing
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 📄 License
+
+This project is proprietary software. All rights reserved.
+
+## 🆘 Support
+
+For support, please contact the development team or open an issue in the repository.
+
+---
+
+Built with ❤️ using [Lovable](https://lovable.dev)
